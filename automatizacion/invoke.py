@@ -2,7 +2,7 @@ import json
 import boto3
 import base64
 
-LAMBDA_NAME = "get-proyectos-portafolio-lambda"
+LAMBDA_NAME = "post-proyectos-portafolio-lambda"
 
 def invoke_lambda():
     lambda_client = boto3.client("lambda", region_name="us-east-1")
