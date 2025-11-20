@@ -19,13 +19,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1   # Cambia a tu región si es otra
 
-      # Instalar dependencias de Python (si tienes requirements.txt)
-      - name: Install dependencies
-        if: hashFiles('requirements.txt') != ''
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt -t modulos.
-
       - name: Create deployment package
         run: |
           zip -r function.zip . \
@@ -35,5 +28,5 @@ jobs:
       - name: Deploy to AWS Lambda
         run: |
           aws lambda update-function-code \
-            --function-name get-proyectos-portafolio-lambda \
+            --function-name post-proyectos-portafolio-lambda \
             --zip-file fileb://function.zip
