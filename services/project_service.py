@@ -16,7 +16,9 @@ class ProjectService:
         project_id = payload.get("projectId", str(uuid.uuid4()))
         timestamp = str(int(time.time()))
 
-        # Item principal SIN campos del GSI
+        skills = payload.get("skills", [])
+        skills_ids = [s["skillId"] for s in skills if "skillId" in s]
+
         item = {
             "projectId": project_id,
             "name": payload["name"],
@@ -26,35 +28,13 @@ class ProjectService:
             "repoUrl": payload.get("repoUrl"),
             "demoUrl": payload.get("demoUrl"),
 
-            "skills": payload.get("skills", []),
+            "skills": skills,
+            "skillsIds": skills_ids,
 
             "createdAt": timestamp,
             "updatedAt": timestamp
         }
 
-        # Guardar item principal
         ProjectRepository.create_project(item)
-
-        # Crear items para el GSI
-        if "skills" in payload:
-            for skill in payload["skills"]:
-                if "skillId" not in skill:
-                    continue
-                
-                gsi_item = {
-                    "projectId": project_id,
-                    "name": payload["name"],
-
-                    # Claves del índice
-                    "GSI1PK": skill["skillId"],  # Partition key del GSI
-                    "GSI1SK": project_id,        # Sort key del GSI
-
-                    # Timestamps
-                    "createdAt": timestamp,
-                    "updatedAt": timestamp
-                }
-
-                # Insertar item del GSI
-                ProjectRepository.create_project(gsi_item)
 
         return item
