@@ -13,54 +13,48 @@ class ProjectService:
         if "description" not in payload:
             raise Exception("El campo 'description' es obligatorio.")
 
-        # Generar ID único si no viene del frontend
         project_id = payload.get("projectId", str(uuid.uuid4()))
-
         timestamp = str(int(time.time()))
 
-        # Construir el item final
+        # Item principal SIN campos del GSI
         item = {
             "projectId": project_id,
             "name": payload["name"],
             "description": payload["description"],
 
-            # Opcionales
             "imageUrl": payload.get("imageUrl"),
             "repoUrl": payload.get("repoUrl"),
             "demoUrl": payload.get("demoUrl"),
 
-            # Skills embebidos
             "skills": payload.get("skills", []),
 
-            # Indices para filtrar
-            # Vamos a generar un materialized index para cada skill usado
-            "GSI1PK": None,   # Esto se ignora en un INSERT múltiple
-            "GSI1SK": project_id,
-
-            # Timestamps
             "createdAt": timestamp,
             "updatedAt": timestamp
         }
 
-        # IMPORTANTE:
-        # Por cada skill debe insertarse un item con sus campos GSI1
-        skill_items = []
+        # Guardar item principal
+        ProjectRepository.create_project(item)
 
+        # Crear items para el GSI
         if "skills" in payload:
             for skill in payload["skills"]:
                 if "skillId" not in skill:
                     continue
+                
+                gsi_item = {
+                    "projectId": project_id,
+                    "name": payload["name"],
 
-                skill_items.append({
-                    **item,
-                    "GSI1PK": skill["skillId"]
-                })
+                    # Claves del índice
+                    "GSI1PK": skill["skillId"],  # Partition key del GSI
+                    "GSI1SK": project_id,        # Sort key del GSI
 
-        # Insert principal (proyecto)
-        ProjectRepository.create_project(item)
+                    # Timestamps
+                    "createdAt": timestamp,
+                    "updatedAt": timestamp
+                }
 
-        # Insert de cada skill para el GSI
-        for s in skill_items:
-            ProjectRepository.create_project(s)
+                # Insertar item del GSI
+                ProjectRepository.create_project(gsi_item)
 
         return item
